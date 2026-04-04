@@ -53,14 +53,45 @@ dados = dados.loc[intervalo_datas[0]:intervalo_datas[1]] # Filtrar os dados para
 # Criação do gráfico
 st.line_chart(dados) # Gráfico de linha para mostrar a evolução do preço das ações
 
+# Calculo de performance
 texto_performance_ativos = ""
-for ativos in lista_acoes:
+
+if len(lista_acoes) == 0:
+  lista_acoes = dados.columns
+elif len(lista_acoes) == 1:
+  dados = dados.rename(columns={"Close": acao_unica})
+
+carteira = [1000 for acao in lista_acoes]
+total_inical_carteira = sum(carteira)
+
+for i, acao in enumerate(lista_acoes):
   performance_ativo = dados[acao].iloc[-1] / dados[acao].iloc[0] - 1 # Como calcular o valor de um ativo (VALOR_FINAL / VALOR_INCIAL -1)
   performance_ativo = float(performance_ativo)
-  print(performance_ativo)
+  # print(performance_ativo)
+  carteira[i] = carteira[i] * (1 + performance_ativo)
+
+  if performance_ativo > 0:
+    # :cor[texto]
+    texto_performance_ativos = texto_performance_ativos + f"  \n{acao}: :green[{performance_ativo:.1%}]"
+  elif performance_ativo < 0:
+    texto_performance_ativos = texto_performance_ativos + f"  \n{acao}: :red[{performance_ativo:.1%}]"
+  else:
+    texto_performance_ativos = texto_performance_ativos + f"  \n{acao}: {performance_ativo:.1%}"
+
+total_final_carteira = sum(carteira)
+performance_carteira = total_final_carteira / total_inical_carteira - 1
+
+if performance_carteira > 0:
+    texto_performance_carteira = f"Performance da carteira com todos os ativos: :green[{performance_carteira:.1%}]"
+elif performance_carteira < 0:
+    texto_performance_carteira = f"Performance da carteira com todos os ativos: :red[{performance_carteira:.1%}]"
+else:
+    texto_performance_carteira = f"Performance da carteira com todos os ativos: {performance_carteira:.1%}"
 
 st.write(f"""
 ### Performance dos Ativos
 A tabela abaixo mostra a performance dos ativos selecionados no período escolhido.
 {texto_performance_ativos}
+
+{texto_performance_carteira}
 """) # Variável dentro de um texto add um "f" para formatar o texto e colocar a variável dentro de chaves {}
