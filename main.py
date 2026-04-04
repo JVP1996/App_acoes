@@ -7,8 +7,9 @@ from datetime import timedelta
 
 # Criar funções de carregamento de dados
   # Cotações do Itáu ITUB4 - 2010-2026
+
 @st.cache_data # Cache para otimizar o carregamento dos dados
-def carregar_dados(empresas):
+def carregar_dados(empresas): 
   texto_tickers = " ".join(empresas)
   dados_acao = yf.Tickers(texto_tickers)
   cotacoes_acao = dados_acao.history(start="2010-01-01", end="2026-01-01")
@@ -16,7 +17,14 @@ def carregar_dados(empresas):
   cotacoes_acao = cotacoes_acao["Close"]
   return cotacoes_acao
 
-acoes = ["ITUB4.SA", "PETR4.SA", "MGLU3.SA", "VALE3.SA", "ABEV3.SA", "GGBR4.SA"]
+@st.cache_data
+def carregar_tickers_acoes():
+  base_tickers = pd.read_csv("IBOV.csv", sep=";")
+  tickers = list(base_tickers["Código"])
+  tickers = [item + ".SA" for item in tickers] # Adicionar o sufixo ".SA" para os tickers do Yahoo Finance
+  return tickers
+
+acoes = carregar_tickers_acoes()
 dados = carregar_dados(acoes) # Carregar os dados das ações selecionadas
 
 # Criar a interface do Streamlit
@@ -45,4 +53,14 @@ dados = dados.loc[intervalo_datas[0]:intervalo_datas[1]] # Filtrar os dados para
 # Criação do gráfico
 st.line_chart(dados) # Gráfico de linha para mostrar a evolução do preço das ações
 
-st.write(""" ## Fim do App""")
+texto_performance_ativos = ""
+for ativos in lista_acoes:
+  performance_ativo = dados[acao].iloc[-1] / dados[acao].iloc[0] - 1 # Como calcular o valor de um ativo (VALOR_FINAL / VALOR_INCIAL -1)
+  performance_ativo = float(performance_ativo)
+  print(performance_ativo)
+
+st.write(f"""
+### Performance dos Ativos
+A tabela abaixo mostra a performance dos ativos selecionados no período escolhido.
+{texto_performance_ativos}
+""") # Variável dentro de um texto add um "f" para formatar o texto e colocar a variável dentro de chaves {}
